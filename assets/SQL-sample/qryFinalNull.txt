@@ -1,0 +1,3 @@
+SELECT FinalKCCC_WN.KeyContactFullName, FinalKCCC_WN.KeyContactEmail, CM.CompanyName, CM.ProductID, FinalKCCC_WN.ContactType, FinalKCCC_WN.ContactName, FinalKCCC_WN.ContactEmail INTO FinalNull
+FROM FinalKCCC_WN LEFT JOIN CompanyMembership AS CM ON CM.CM_ID = FinalKCCC_WN.CM_ID
+WHERE FinalKCCC_WN.KeyContactFullName is null;

@@ -1,0 +1,14 @@
+SELECT FinalKC_WN.KeyContactFirstName, FinalKC_WN.KeyContactLastName, FinalKC_WN.KeyContactFullName, FinalKC_WN.KeyContactEmail, CM.CompanyName, Switch(
+CM.ProductID = "CDB", "LTD Claims Data Bank",
+CM.ProductID = "CSA", "Cost Structure Analysis",
+CM.ProductID = "CSP", "Cost Structure Pension",
+CM.ProductID = "GUR", "Group Universe Report",
+CM.ProductID = "IHM", "Individual Health Market",
+CM.ProductID = "MVT", "Market View Trends",
+CM.ProductID = "PUR", "Pension Universe Report",
+CM.ProductID = "SPS", "Sources of Profit Survey") AS Product, Switch(
+FinalKC_WN.ContactType = "DataContact", "Data Contact",
+FinalKC_WN.ContactType = "RegUser", "Registered User"
+        ) AS [Contact Type], FinalKC_WN.ContactName AS [Contact Name], FinalKC_WN.ContactEmail AS [Contact Email] INTO FinalKC
+FROM FinalKC_WN LEFT JOIN CompanyMembership AS CM ON CM.CM_ID = FinalKC_WN.CM_ID
+WHERE FinalKC_WN.KeyContactFullName is not null;

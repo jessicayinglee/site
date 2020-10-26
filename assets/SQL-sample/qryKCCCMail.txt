@@ -1,0 +1,4 @@
+SELECT DISTINCT KeyContactFirstName, KeyContactLastName, KeyContactFullName, KeyContactEmail, COUNT(KeyContactFullName) INTO KeyContactCCMail
+FROM FinalKCCC
+GROUP BY KeyContactFullName, KeyContactFirstName, KeyContactLastName, KeyContactEmail
+ORDER BY COUNT(KeyContactFullName) DESC;
