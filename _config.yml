@@ -4,6 +4,13 @@ email: jlee2853@uwo.ca
 description: > # this means to ignore newlines until "baseurl:"
   Test site
 theme: minima
+navbar:
+  title: "My Website"
+  type: inverse
+  left:
+    - text: "Home"
+      icon: fa-home
+      href: "CDB Incidence.html"
 
 # social links
 github_username:  your-github-handle # DO NOT include the @ character, or else the build will fail!
