@@ -96,3 +96,8 @@ a {
 .page-heading {
   @include relative-font-size(1.625);
 }
+
+/* Code blocks */
+.highlighter-rouge & {
+    background: #f6f6ea;
+  }
