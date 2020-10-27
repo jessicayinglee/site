@@ -6,5 +6,6 @@ header_pages:
   - index.md
   - resume.md
   - projects.html
+date: "October 2020"
 # github_username:  your-github-handle # DO NOT include the @ character, or else the build will fail!
 # show_excerpts: true # set to false to remove excerpts on the homepage
