@@ -285,9 +285,8 @@ The result is a table called FinalKC that looks like this (note the key contact 
 | KC1              | KC1-email         | Company A    | Product Y | Registered User | Contact3     | contact4-email |
 | KC2              | KC2-email         | Company A    | Product Z | Key Contact Cc  | Contact4     | contact4-email |
 | KC2              | KC2-email         | Company A    | Product Z | Data Contact    | Contact5     | contact5-email |
-| KC3              | KC3-email         | Company B    | Product X | Key Contact Cc  | Contact6     | contact6-email |
 
-KC1 will receive an email with a table containing all the rows with the name KC1, i.e. rows 1 to 4. KC2 will receive an email with a table containing rows 5 to 6.
+KC1 will receive an email with a table containing all the rows with the name KC1, i.e. rows 1 to 3. KC2 will receive an email with a table containing rows 4 to 5.
 
 The emails were produced in MS Word using a table that queried all unique key contacts from FinalKC. Using the list key contacts, MS Word generated an email for each key contact (a.k.a a mail merge) that queried the database for the relevant rows. This was done using the field code below.
 ```
