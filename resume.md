@@ -1,6 +1,6 @@
 ---
 title: Resume
-layout: home
+layout: default
 ---
 
 Resume content
