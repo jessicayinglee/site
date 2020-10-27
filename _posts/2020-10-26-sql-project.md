@@ -2,7 +2,7 @@
 layout: post
 title: "SQL Project: Verifying contact information in the client database"
 date: 2020-01-03
-category: projects
+categories: projects
 ---
 
 The goal of this project is to send emails to Key Contacts for each product at each company that purchases that product. The email will contain a list of all other contacts in the client database that are associated with the Key Contact's product(s) and company. Roles are given to contacts at each company, for each product. 
