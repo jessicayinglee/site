@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Emailing custom database query results based on recipient"
-type: "SQL"
+subtitle: "Language: SQL"
 date: 2020-01-03
 categories: projects
 ---
