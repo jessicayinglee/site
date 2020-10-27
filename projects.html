@@ -3,9 +3,8 @@ title: Projects
 layout: home
 ---
 
-<ul class="myposts">
 {% for post in site.categories.projects %}
     <h2><a href="{{ post.url | relative_url }}">{{ post.title }}</a></h2>
     <span class="postDate">{{ post.date | date: "%b %-d, %Y" }}</span>
 {% endfor %}
-</ul>
+
