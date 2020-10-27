@@ -40,7 +40,8 @@ a {
   float: left;
 
   &,
-  &:visited {
+  &:visited,
+  &:hover {
     color: $brand-color;
     text-decoration: underline;
     text-underline-offset: 15px;
