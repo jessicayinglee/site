@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "SQL Project: Verifying contact information in the client database"
+title: "SQL Project: Emailing custom database query results based on recipient"
 date: 2020-01-03
 categories: projects
 ---
