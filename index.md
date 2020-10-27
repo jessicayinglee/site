@@ -1,3 +1,6 @@
-# Welcome to my blog
+---
+layout: home
+title: About
+---
 
-Lorem ipsum
+Lorem ipsum dolor
