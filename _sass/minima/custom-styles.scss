@@ -90,3 +90,7 @@ a {
   }
 }
 
+/* Page styles */
+.page-heading {
+  @include relative-font-size(1.625);
+}
