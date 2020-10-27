@@ -20,12 +20,8 @@
       </div>
 
       <div class="footer-col footer-col-2">
-        {%- include social.html -%}
-      </div>
-
-      <div class="footer-col footer-col-3">
-        {%- if site.description -%}
-          <p>{{ site.description | escape }}</p>
+        {%- if site.date -%}
+          {{ site.date | escape }}
         {%- endif -%}
       </div>
     </div>
