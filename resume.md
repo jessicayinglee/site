@@ -1,6 +1,6 @@
 ---
 title: Resume
-layouts: home
+layout: home
 order: 2
 ---
 
