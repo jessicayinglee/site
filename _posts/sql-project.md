@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "SQL Project: Verifying contact information in the client database"
-date: 2020-10-26
+date: 2020-01-03
 ---
 
 # Background
