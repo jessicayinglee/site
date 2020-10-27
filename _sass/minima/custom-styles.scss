@@ -29,12 +29,9 @@ a {
   // Positioning context for the mobile navigation icon
   position: relative;
   
-  .wrapper {
-    border-bottom: 1px solid $grey-color-light;
-    
-    a:hover {
+  .wrapper .site-title a,a:hover {
+      text-decoration: underline;
       text-underline-offset: 15px;
-    }
   }
 }
 
