@@ -89,6 +89,12 @@ a {
     padding: $spacing-unit 0;
   }
 }
+.footer-heading {
+  display: none;
+  @include relative-font-size(1.125);
+  margin-bottom: $spacing-unit / 2;
+}
+
 
 /* Page styles */
 .page-heading {
