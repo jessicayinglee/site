@@ -23,7 +23,6 @@ The database and queries are written for MSSQL/MS Access.
 a. Join Company with Division, then join with Role, then join with Person. Resulting table is called "People"
 b. Join Product Role with Product Link Type (contains names for types of roles). Resulting table is called "Roles
 c. Join People with Roles, then join with Email. Store the final result in "AllContacts"
-
 ```sql
 SELECT ProductID,
        ContactType,
@@ -126,6 +125,7 @@ FROM   AllContacts AS AC
                  AND ( AC.CompanyName = CM.CompanyName )
 WHERE  AC.ContactType = "KeyContactCC"; 
 ```
+
 4. Repeat step 3 but for Data Contacts, Registered Users, and attached Key Contact CCs (stored in "NonKeyContactMembership")
 ```sql
 CREATE TABLE NonKeyContactMembership
@@ -185,6 +185,7 @@ FROM   AllContacts AS AC
                  AND ( AC.ProductID = CM.ProductID )
 WHERE  (( ( AC.ContactType ) = "KeyContactCC" )); 
 ```
+
 5. Left merge "NonKeyContactMembership" with "KeyContactMembership" (stored in "FinalKC_WN"). This will contain nulls for the people without Key Contacts. The nulls are saved for review before removal.
 ```sql
 SELECT KCM.First        AS KeyContactFirstName,
@@ -248,6 +249,7 @@ FROM   (SELECT *
               ON B.CM_ID = KCCCM.CM_ID
 ORDER  BY KCCCM.FullName; 
 ```
+
 8. The nulls from the previous step were found to be extraneous. Remove nulls from "FinalKCCC_WN" and store in "FinalKCCC".
 ```sql
 SELECT FinalKCCC_WN.KeyContactFirstName,
@@ -280,7 +282,7 @@ The result is a table called FinalKC that looks like this:
 
 KC1 will receive an email with a table containing all the rows with the name KC1, i.e. rows 1 to 4. KC2 will receive an email with a table containing rows 5 to 6.
 
-The emails were produced in MS Word using a table that queried all unique key contacts from FinalKC. Using the list key contacts, MS Word generated an email for each key contact (a.k.a a mail merge) that queried the database for the relevant rows. This was done using the field code below:
+The emails were produced in MS Word using a table that queried all unique key contacts from FinalKC. Using the list key contacts, MS Word generated an email for each key contact (a.k.a a mail merge) that queried the database for the relevant rows. This was done using the field code below.
 ```
 { DATABASE  
 \d URL_TO_DATABASE;
@@ -308,3 +310,4 @@ The emails were produced in MS Word using a table that queried all unique key co
 \h 
 \* MERGEFORMAT 
 }
+```
