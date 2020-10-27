@@ -22,10 +22,10 @@ The queries will select from the following tables:
 # Methodology
 The database and queries are written for MSSQL/MS Access.
 
-## 1. Merge tables to collect all relevant data columns. 
-a. Join Company with Division, then join with Role, then join with Person. Resulting table is called "People"
-b. Join Product Role with Product Link Type (contains names for types of roles). Resulting table is called "Roles
-c. Join People with Roles, then join with Email. Store the final result in "AllContacts"
+1. Merge tables to collect all relevant data columns. 
+   a. Join Company with Division, then join with Role, then join with Person. Resulting table is called "People"
+   b. Join Product Role with Product Link Type (contains names for types of roles). Resulting table is called "Roles
+   c. Join People with Roles, then join with Email. Store the final result in "AllContacts"
 ```sql
 SELECT ProductID,
        ContactType,
