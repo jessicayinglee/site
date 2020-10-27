@@ -1,7 +1,7 @@
 ---
 title: Resume
-layouts: default
-order: 3
+layouts: home
+order: 2
 ---
 
 Resume content
