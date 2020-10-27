@@ -1,8 +1,8 @@
 - title: About
-  url: /
+  path: /
 
 - title: Sample page 2
-  url: /resume.html
+  path: /resume.html
 
 - title: Sample page 3
-  url: /projects.html
+  path: /projects.html
