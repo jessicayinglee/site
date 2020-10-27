@@ -28,11 +28,7 @@ a {
 
   // Positioning context for the mobile navigation icon
   position: relative;
-  
-  .wrapper .site-title a,a:hover {
-      text-decoration: underline;
-      text-underline-offset: 15px;
-  }
+
 }
 
 .site-title {
@@ -46,6 +42,8 @@ a {
   &,
   &:visited {
     color: $brand-color;
+    text-decoration: underline;
+    text-underline-offset: 15px;
   }
 }
 
