@@ -1,3 +1,29 @@
+/* Custom links */
+a {
+  color: $brand-color;
+  text-decoration: none;
+
+  &:visited {
+    color: darken($brand-color, 15%);
+  }
+
+  &:hover {
+    color: $text-color;
+    text-decoration: underline;
+    text-decoration-color: $brand-color;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 10px;
+  }
+
+  .social-media-list &:hover {
+    text-decoration: none;
+
+    .username {
+      text-decoration: underline;
+    }
+  }
+}
+
 /* Custom site header */
 .site-header {
   border-top: none;
@@ -9,6 +35,10 @@
   
   .wrapper {
     border-bottom: 1px solid $grey-color-light;
+    
+    a:hover {
+      text-underline-offset: 15px;
+    }
   }
 }
 
