@@ -1,4 +1,4 @@
 ---
 title: Projects
-layout: list-posts
+layout: home
 ---
