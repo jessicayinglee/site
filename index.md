@@ -1,7 +1,6 @@
 ---
 layout: home
 title: About
-order: 1
 ---
 
 Hi, I'm Jess. I currently work in Toronto as a research/data analyst, doing market research on insurance companies in Canada. I graduated with a master's in economics in 2019 from the University of Western Ontario. Ultimately, I hope to pursue a career in academic research in economics; I am primarily interested in studying decision theory, with a secondary interest in public economics.
