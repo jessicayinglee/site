@@ -269,16 +269,16 @@ WHERE  FinalKCCC_WN.KeyContactFullName is not null;
 ```
 
 ## Result
-The result is a table called FinalKC that looks like this:
+The result is a table called FinalKC that looks like this (note the key contact first name, last name, and full name columns have been combined for display purposes):
 
-| KeyContactFirstName | KeyContactLastName | KeyContactFullName | KeyContactEmail | CompanyName | Product   | Contact Type    | Contact Name | Contact Email    |
-|---------------------|--------------------|--------------------|-----------------|-------------|-----------|-----------------|--------------|------------------|
-| KC1                 | KC1                | KC1                | KC1@email.com   | Company A   | Product X | Data Contact    | Name1        | email1@email.com |
-| KC1                 | KC1                | KC1                | KC1@email.com   | Company A   | Product X | Data Contact    | Name2        | email2@email.com |
-| KC1                 | KC1                | KC1                | KC1@email.com   | Company A   | Product Y | Registered User | Name3        | email3@email.com |
-| KC2                 | KC2                | KC2                | KC2@email.com   | Company A   | Product Z | Key Contact Cc  | Name4        | email4@email.com |
-| KC2                 | KC2                | KC2                | KC2@email.com   | Company A   | Product Z | Data Contact    | Name5        | email5@email.com |
-| KC3                 | KC3                | KC3                | KC3@email.com   | Company B   | Product X | Key Contact Cc  | Name6        | email6@email.com |
+| KeyContactName | KeyContactEmail    | CompanyName | Product   | Contact Type    | Contact Name | Contact Email    |
+|----------------|--------------------|-------------|-----------|-----------------|--------------|------------------|
+| KC1            | KC1email@email.com | Company A   | Product X | Data Contact    | Name1        | email1@email.com |
+| KC1            | KC1email@email.com | Company A   | Product X | Data Contact    | Name2        | email2@email.com |
+| KC1            | KC1email@email.com | Company A   | Product Y | Registered User | Name3        | email3@email.com |
+| KC2            | KC2email@email.com | Company A   | Product Z | Key Contact Cc  | Name4        | email4@email.com |
+| KC2            | KC2email@email.com | Company A   | Product Z | Data Contact    | Name5        | email5@email.com |
+| KC3            | KC3email@email.com | Company B   | Product X | Key Contact Cc  | Name6        | email6@email.com |
 
 KC1 will receive an email with a table containing all the rows with the name KC1, i.e. rows 1 to 4. KC2 will receive an email with a table containing rows 5 to 6.
 
