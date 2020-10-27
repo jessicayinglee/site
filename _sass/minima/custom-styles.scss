@@ -1,7 +1,7 @@
 /* Custom site header */
 .site-header {
   border-top: none;
-  // border-bottom: 1px solid $grey-color-light;
+  border-bottom: none;
   min-height: $spacing-unit * 1.865;
 
   // Positioning context for the mobile navigation icon
@@ -51,10 +51,12 @@
 
 /* Custom site footer */
 .site-footer {
-  // border-top: 1px solid $grey-color-light;
+  border-top: none;
   padding: $spacing-unit 0;
+  
   .wrapper {
-  border-top: 1px solid $grey-color-light;
+    border-top: 1px solid $grey-color-light;
+    padding: $spacing-unit 0;
   }
 }
 
