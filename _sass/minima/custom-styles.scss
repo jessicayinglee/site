@@ -13,8 +13,8 @@
 }
 
 .site-title {
-  @include relative-font-size(1.625);
-  font-weight: 300;
+  @include relative-font-size(1.875);
+  font-weight: 500;
   line-height: $base-line-height * $base-font-size * 4;
   letter-spacing: -1px;
   margin-bottom: 0;
