@@ -4,15 +4,16 @@ title: "SQL Project: Verifying contact information in the client database"
 date: 2020-01-03
 ---
 
-# Background
-The company produces market research reports on a variety of topics; each report is referred to as a "product". For each product, the company works with multiple people from each client company. Contact information for all of these people are saving in the client database, along with their assigned role. Roles are given to contacts at each company, for each product. The roles are:
+The goal of this project is to send emails to Key Contacts for each product at each company that purchases that product. The email will contain a list of all other contacts in the client database that are associated with the Key Contact's product(s) and company. Roles are given to contacts at each company, for each product. 
+
+Each person in the database is assigned a role. The roles are:
 
 * Key Contact (KC). The KC is the "owner" of the product and signs the participation agreement. Each product has only one KC at each participating company. 
 * Key Contact Cc (KCCC). The KCCCs are cc'd on all e-mails to the KC.
 * Data Contact (DC). The DCs are contacted for matters related to data collection.
 * Registered User (RU). RUs are people who make significant use of the product.
 
-The goal of this project is to send each KC a list of KCCCs, DCs, and RUs at their company for each product they are involved in. This task requires multiple merge queries on the database. The queries will select from the following tables:
+The queries will select from the following tables:
 
 ** insert image of tables **
 
@@ -70,14 +71,14 @@ INNER JOIN (SELECT PersonID,
 	    FROM   tblEmail
 	    WHERE  Default <> 0) AS E
         ON People.PersonID = E.PersonID
-WHERE  ( ProductID = 'CDB' )
-        OR ( ProductID = 'CSA' )
-        OR ( ProductID = 'CSP' )
-        OR ( ProductID = 'GUR' )
-        OR ( ProductID = 'IHM' )
-        OR ( ProductID = 'MVT' )
-        OR ( ProductID = 'PUR' )
-        OR ( ProductID = 'SPS' ); 
+WHERE  ( ProductID = "Product1" )
+        OR ( ProductID = "Product2" )
+        OR ( ProductID = "Product3" )
+        OR ( ProductID = "Product4" )
+        OR ( ProductID = "Product5" )
+        OR ( ProductID = "Product6" )
+        OR ( ProductID = "Product7" )
+        OR ( ProductID = "Product8" ); 
 ```
 
 2. From AllContacts, query all unique pairs of company and product IDs, and call it CM_ID. This will create a primary key index, stored in table "CompanyMembership"
@@ -210,18 +211,24 @@ SELECT FinalKC_WN.KeyContactFirstName,
        FinalKC_WN.KeyContactFullName,
        FinalKC_WN.KeyContactEmail,
        CM.CompanyName,
-       Switch(CM.ProductID = "CDB", "LTD Claims Data Bank", CM.ProductID = "CSA"
-       ,
-       "Cost Structure Analysis", CM.ProductID = "CSP", "Cost Structure Pension"
-       ,
-       CM.ProductID = "GUR", "Group Universe Report", CM.ProductID = "IHM",
-       "Individual Health Market", CM.ProductID = "MVT", "Market View Trends",
-       CM.ProductID = "PUR", "Pension Universe Report", CM.ProductID = "SPS",
-       "Sources of Profit Survey")                            AS Product,
+       Switch(CM.ProductID = "Product1", "Product1 Name", 
+       	      CM.ProductID = "Product2", "Product2 Name",
+	      CM.ProductID = "Product3", "Product3 Name",
+	      CM.ProductID = "Product4", "Product4 Name",
+	      CM.ProductID = "Product5", "Product5 Name",
+	      CM.ProductID = "Product6", "Product6 Name",
+	      CM.ProductID = "Product7", "Product7 Name",
+	      CM.ProductID = "Product8", "Product8 Name"
+	      )                            
+	      AS Product
        Switch(FinalKC_WN.ContactType = "DataContact", "Data Contact",
-       FinalKC_WN.ContactType = "RegUser", "Registered User") AS [Contact Type],
-       FinalKC_WN.ContactName                                 AS [Contact Name],
-       FinalKC_WN.ContactEmail                                AS [Contact Email]
+       	      FinalKC_WN.ContactType = "RegUser", "Registered User"
+	      ) 
+	      AS [Contact Type],
+       FinalKC_WN.ContactName                                 
+       	      AS [Contact Name],
+       FinalKC_WN.ContactEmail
+       	      AS [Contact Email]
 INTO   FinalKC
 FROM   FinalKC_WN
        LEFT JOIN CompanyMembership AS CM
@@ -271,14 +278,14 @@ WHERE  FinalKCCC_WN.KeyContactFullName is not null;
 ## Result
 The result is a table called FinalKC that looks like this (note the key contact first name, last name, and full name columns have been combined for display purposes):
 
-| KeyContactName | KeyContactEmail    | CompanyName | Product   | Contact Type    | Contact Name | Contact Email    |
-|----------------|--------------------|-------------|-----------|-----------------|--------------|------------------|
-| KC1            | KC1email@email.com | Company A   | Product X | Data Contact    | Name1        | email1@email.com |
-| KC1            | KC1email@email.com | Company A   | Product X | Data Contact    | Name2        | email2@email.com |
-| KC1            | KC1email@email.com | Company A   | Product Y | Registered User | Name3        | email3@email.com |
-| KC2            | KC2email@email.com | Company A   | Product Z | Key Contact Cc  | Name4        | email4@email.com |
-| KC2            | KC2email@email.com | Company A   | Product Z | Data Contact    | Name5        | email5@email.com |
-| KC3            | KC3email@email.com | Company B   | Product X | Key Contact Cc  | Name6        | email6@email.com |
+| Key Contact Name | Key Contact Email | Company Name | Product   | Contact Type    | Contact Name | Contact Email  |
+|------------------|-------------------|--------------|-----------|-----------------|--------------|----------------|
+| KC1              | KC1-email         | Company A    | Product X | Data Contact    | Contact1     | contact1-email |
+| KC1              | KC1-email         | Company A    | Product X | Data Contact    | Contact2     | contact2-email |
+| KC1              | KC1-email         | Company A    | Product Y | Registered User | Contact3     | contact4-email |
+| KC2              | KC2-email         | Company A    | Product Z | Key Contact Cc  | Contact4     | contact4-email |
+| KC2              | KC2-email         | Company A    | Product Z | Data Contact    | Contact5     | contact5-email |
+| KC3              | KC3-email         | Company B    | Product X | Key Contact Cc  | Contact6     | contact6-email |
 
 KC1 will receive an email with a table containing all the rows with the name KC1, i.e. rows 1 to 4. KC2 will receive an email with a table containing rows 5 to 6.
 
