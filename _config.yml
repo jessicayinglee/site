@@ -2,5 +2,9 @@ title: Jessica Lee
 author: Jessica Lee
 email: jlee2853@uwo.ca
 theme: minima
+header_pages:
+  - index.md
+  - resume.md
+  - projects.html
 # github_username:  your-github-handle # DO NOT include the @ character, or else the build will fail!
 # show_excerpts: true # set to false to remove excerpts on the homepage
