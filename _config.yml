@@ -1,11 +1,7 @@
-title: Jess Test Site
-author: Jess
+title: Jessica Lee
+author: Jessica Lee
 email: jlee2853@uwo.ca
-description: > # this means to ignore newlines until "baseurl:"
-  Test site
+description: "Description" 
 theme: minima
-
-# social links
-github_username:  your-github-handle # DO NOT include the @ character, or else the build will fail!
-
-show_excerpts: true # set to false to remove excerpts on the homepage
+# github_username:  your-github-handle # DO NOT include the @ character, or else the build will fail!
+# show_excerpts: true # set to false to remove excerpts on the homepage
