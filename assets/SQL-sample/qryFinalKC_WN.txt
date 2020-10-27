@@ -1,0 +1,3 @@
+SELECT KCM.First AS KeyContactFirstName, KCM.Last AS KeyContactLastName, KCM.FullName AS KeyContactFullName, KCM.Email AS KeyContactEmail, NKCM.FullName AS ContactName, NKCM.Email AS ContactEmail, NKCM.ContactType AS ContactType, NKCM.CM_ID INTO FinalKC_WN
+FROM NonKeyContactMembership AS NKCM LEFT JOIN KeyContactMembership AS KCM ON KCM.CM_ID = NKCM.CM_ID
+ORDER BY KCM.FullName;

@@ -1,0 +1,4 @@
+INSERT INTO NonKeyContactMembership ( FullName, Email, ContactType, CM_ID )
+SELECT AC.FullName, AC.Email, AC.ContactType, CM.CM_ID
+FROM AllContacts AS AC LEFT JOIN CompanyMembership AS CM ON (AC.ProductID = CM.ProductID) AND (AC.CompanyName = CM.CompanyName)
+WHERE (((AC.ContactType)="DataContact"));
