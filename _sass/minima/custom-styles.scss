@@ -104,7 +104,7 @@ a.u-email:hover {
 .footer-col-wrapper {
   display: flex;
   justify-content: space-between;
-
+  color: $grey-color;
    &::after {
      content: none;
   }
