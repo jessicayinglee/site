@@ -24,14 +24,6 @@ a {
     text-decoration-thickness: 2px;
         text-underline-offset: 5px;
   }
-
-  .social-media-list &:hover {
-    text-decoration: none;
-
-    .username {
-      text-decoration: underline;
-    }
-  }
   
   .u-email &:hover {
     text-decoration: none;
@@ -83,6 +75,8 @@ a {
   input:checked ~ .trigger {
     padding-bottom: 10px;
   }
+  @media screen and (min-width: $on-medium) {
+    background-color: inherit;
 }
 
 /* Custom site footer */
