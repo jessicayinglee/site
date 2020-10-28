@@ -1,5 +1,17 @@
 <header class="site-header" role="banner">
-
+<script>
+  $('#hamburger').click(function (){
+    var nav = $('#nav');
+    if (nav.css('display') === 'block') {
+      nav.css('display', 'none');
+      $('.hamburgerLine').css('background-color', '#017c81')
+    } else {
+      nav.css('display', 'block')
+      $('.hamburgerLine').css('background-color', '#bbb')
+      }
+    })
+  </script>
+  
   <div class="wrapper">
     {%- assign default_paths = site.pages | map: "path" -%}
     {%- assign page_paths = site.header_pages | default: default_paths -%}
@@ -7,6 +19,11 @@
 
     {%- if page_paths -%}
       <nav class="site-nav">
+         <a href="javascript:void(0);" id="hamburger" class="menu-icon">
+          <div class="hamburgerLine"></div>
+          <div class="hamburgerLine"></div>
+          <div class="hamburgerLine"></div>
+        </a>
         <div class="trigger">
           {%- for path in page_paths -%}
             {%- assign my_page = site.pages | where: "path", path | first -%}
@@ -15,11 +32,7 @@
             {%- endif -%}
           {%- endfor -%}
         </div>
-        <a href="javascript:void(0);" id="hamburger" class="menu-icon">
-          <div class="hamburgerLine"></div>
-          <div class="hamburgerLine"></div>
-          <div class="hamburgerLine"></div>
-        </a>
+ 
         <div class="nav-trigger">
           {%- for path in page_paths -%}
             {%- assign my_page = site.pages | where: "path", path | first -%}
