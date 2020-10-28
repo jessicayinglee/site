@@ -68,10 +68,20 @@ a {
 
 .site-nav {
   line-height: $base-line-height * $base-font-size * 4;
+  border: none;
+  top: 32px;
+  right: 16px;
+  background-color: #f9f8f6;
   .page-link {
     color: $text-color;
     line-height: $base-line-height;
     text-underline-offset: 10px;
+  }
+  .menu-icon > svg path {
+    fill: $brand-color;
+  }
+  input:checked ~ .trigger {
+    padding-bottom: 10px;
   }
 }
 
