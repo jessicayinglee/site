@@ -4,7 +4,7 @@ layout: home
 ---
 
 {% for post in site.categories.papers %}
-    <h2><a href="{{ post.url | relative_url }}">{{ post.title }}</a></h2>
-        <h2>{{ post.subtitle }}</h2>
+    <h3><a href="{{ post.url | relative_url }}">{{ post.title }}</a></h3>
+    <h4>{{ post.subtitle }}</h4>
     <span class="postDate">{{ post.date | date: "%b %-d, %Y" }}</span>
 {% endfor %}
