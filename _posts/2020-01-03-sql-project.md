@@ -240,7 +240,7 @@ WHERE  FinalKC_WN.KeyContactFullName is not null;
 
 7. From reviewing the null rows in step 5, there were some product-company pairs that had two Key Contact Ccs and zero Key Contacts. The two KCCCs are treated as a single key contact, and their lists are stored in a separate table.
 
-Left merge the null rows in "FinalKC_WN" with "KeyContactCCMembership" (stored in "FinalKCCC_WN"). Again, the table is saved with nulls for review. 
+   Left merge the null rows in "FinalKC_WN" with "KeyContactCCMembership" (stored in "FinalKCCC_WN"). Again, the table is saved with nulls for review. 
 ```sql
 SELECT DISTINCT KCCCM.First    AS KeyContactFirstName,
                 KCCCM.Last     AS KeyContactLastName,
