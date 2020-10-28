@@ -4,7 +4,7 @@ title: About
 base_url: https://jessicayinglee.github.io/site/
 ---
 
-![Professional headshot of Jess](assets/headshot-2018.png "Jess")
+![Professional headshot of Jess](assets/headshot-2018.jpg "Jess")
 
 Hi, I'm Jess. I currently work in Toronto as a research/data analyst, doing market research on insurance companies in Canada. I graduated with a master's in economics in 2019 from the University of Western Ontario. Ultimately, I hope to pursue a career in academic research in economics; I am primarily interested in studying decision theory, with a secondary interest in public economics.
 
