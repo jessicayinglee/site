@@ -67,25 +67,11 @@ a {
 }
 
 .site-nav {
-  float: right;
   line-height: $base-line-height * $base-font-size * 4;
-
-  .nav-trigger {
-      display: none;
-  }
-
-  .menu-icon {
-    display: none;
-  }
-
   .page-link {
     color: $text-color;
     line-height: $base-line-height;
     text-underline-offset: 10px;
-    // Gaps between nav items, but not on the last one
-    &:not(:last-child) {
-      margin-right: 20px;
-    }
   }
 }
 
