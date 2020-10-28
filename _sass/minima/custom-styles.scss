@@ -17,6 +17,9 @@ a {
   color: $brand-color;
   text-decoration: none;
 
+  &:visited {
+    color: $brand-color;
+  }
   &:hover {
     text-decoration: underline;
     text-decoration-color: $brand-color;
