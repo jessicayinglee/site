@@ -18,6 +18,10 @@ a {
       text-decoration: underline;
     }
   }
+  
+  .u-email &:hover {
+    text-decoration: none;
+  }
 }
 
 /* Custom site header */
@@ -87,6 +91,14 @@ a {
   margin-bottom: $spacing-unit / 2;
 }
 
+.footer-col-wrapper {
+  display: flex;
+  justify-content: space-between;
+}
+
+.footer-col-3 {
+  width: auto;
+}
 
 /* Page styles */
 .page-heading {
