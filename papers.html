@@ -1,0 +1,9 @@
+---
+title: Papers
+layout: home
+---
+
+{% for post in site.categories.papers %}
+    <h2><a href="{{ post.url | relative_url }}">{{ post.title }}</a></h2>
+    <span class="postDate">{{ post.date | date: "%b %-d, %Y" }}</span>
+{% endfor %}
