@@ -82,7 +82,10 @@ a {
   
   .wrapper {
     border-top: 1px solid $grey-color-light;
-    padding: $spacing-unit 0;
+    padding-top: $spacing-unit;
+    padding-right: $spacing-unit / 2;
+    padding-bottom: 0px;
+    padding-left: $spacing-unit / 2;
   }
 }
 .footer-heading {
