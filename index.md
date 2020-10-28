@@ -1,6 +1,7 @@
 ---
 layout: home
 title: About
+base_url: https://jessicayinglee.github.io/site/
 ---
 
 ![Professional headshot of Jess](assets/headshot_2015.png "Jess")
