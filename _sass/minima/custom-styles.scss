@@ -1,3 +1,17 @@
+/* headshot styles */
+.headshot-wrapper {
+  text-align: center;
+  padding-top: 30px;
+
+  img {
+    width:160px;  
+    height: 160px; 
+    border-radius: 50%; 
+    object-fit: cover; 
+    object-position: 50% 25%;
+  }
+}
+
 /* Custom links */
 a {
   color: $brand-color;
