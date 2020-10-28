@@ -145,6 +145,9 @@ a.u-email:hover {
 
 
 /* Code blocks */
+.highlight {
+    margin: $spacing-unit / 2, 0,  $spacing-unit, 0;
+}
 .highlighter-rouge .highlight {
     background: #f9f8f6;
   }
