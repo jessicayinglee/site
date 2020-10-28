@@ -113,6 +113,11 @@ a {
   @include relative-font-size(1.625);
 }
 
+.post-subtitle {
+  @include relative-font-size(1.25);
+}
+
+
 /* Code blocks */
 .highlighter-rouge .highlight {
     background: #f9f8f6;
