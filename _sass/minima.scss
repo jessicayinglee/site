@@ -38,6 +38,8 @@ $on-large:         $on-laptop !default;
 // }
 // Notice the following mixin uses max-width, in a deprecated, desktop-first
 // approach, whereas media queries used elsewhere now use min-width.
+
+
 @mixin media-query($device) {
   @media screen and (max-width: $device) {
     @content;
@@ -47,6 +49,7 @@ $on-large:         $on-laptop !default;
 @mixin relative-font-size($ratio) {
   font-size: $base-font-size * $ratio;
 }
+
 
 @import
   "minima/custom-variables", // Hook to override predefined variables.
