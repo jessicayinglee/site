@@ -4,8 +4,8 @@ title: About
 base_url: https://jessicayinglee.github.io/site/
 ---
 
-<div style="text-align: center; padding-bottom: 32px;">
-<img src="assets/headshot-2018.jpg" alt="Professional headshot of Jess" title="Jess" style=" width:160px;  height: 160px; border-radius: 50%; object-fit: cover; object-position: 50% 25%;">
+<div class="headshot-wrapper">
+<img src="assets/headshot-2018.jpg" alt="Professional headshot of Jess" title="Jess">
 </div>
 <h1 class="page-heading">About</h1>
 
