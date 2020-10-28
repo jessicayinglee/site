@@ -94,6 +94,10 @@ a {
 .footer-col-wrapper {
   display: flex;
   justify-content: space-between;
+
+   &::after {
+     content: none;
+  }
 }
 
 .footer-col-3 {
