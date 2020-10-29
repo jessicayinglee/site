@@ -1,19 +1,5 @@
 ---
 title: "CDB Incidence Rate Investigation"
-output:
-  html_document:
-    df_print: paged
-    toc: yes
-    toc_depth: '3'
-  html_notebook:
-    code_folding: hide
-    mathjax: default
-    toc: yes
-    toc_depth: 3
-    toc_float: yes
-    toc_smooth_scroll: yes
-editor_options:
-  chunk_output_type: inline
 ---
 
 # Data
