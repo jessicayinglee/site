@@ -1,5 +1,5 @@
 ---
-layout: default
+layout: default-R
 title: "R Project"
 ---
 {% include toc.html %}
