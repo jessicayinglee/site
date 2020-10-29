@@ -1,0 +1,797 @@
+---
+title: "CDB Incidence Rate Investigation"
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+  html_notebook:
+    code_folding: hide
+    mathjax: default
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+    toc_smooth_scroll: yes
+editor_options:
+  chunk_output_type: inline
+---
+
+# Data
+For convenience, only one year of exposure records was used: 2010. So the dataset is the concatenation of the 2010 exposure records with the 2005-2013 claims records. The year 2010 was not chosen for any particular reason.
+
+Data was gathered from the source files using Python. All sheets in "EPallExp2016CDBStudy_2010.xlsb" were concatenated then saved as "exposure.csv"; the data in "20171105 CDB CLAIMS- sponsors db.xlsb" was saved as "claims.csv".
+
+# Preamble
+
+Packages, settings, and data import are in the code below.
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+### PREAMBLE ---------------------------------------------------
+### General
+library(magrittr)       # extend R syntax with %>% notation
+library(tidyverse)      # data manipulation
+library(stringr)        # string manipulation
+library(skimr)          # data summaries
+library(knitr)          # rendering R objects into Markdown
+
+### Plotting
+library(ggcorrplot)     # correlation plots for ggplot2
+library(gridExtra)      # arranging multiple plots for ggplot2
+
+### Statistics
+library(caret)          # partition data
+library(sandwich)       # gets heteroskedastic standard errors from regression
+library(logistf)        # penalized logistic regressions
+library(glmnet)         # ridge regression
+library(pracma)         # for matrix algebra 
+
+### Settings
+options(scipen = 999)   # removes scientific notation for small numbers
+
+### Import data
+# Data was compiled from source in Python.
+exposure <-
+  read.csv("~/CDB/exposure.csv",
+           na.strings = c(""),
+           stringsAsFactors = T)
+claims <-
+  read.csv("~/CDB/claims.csv",
+           na.strings = c(""),
+           stringsAsFactors = T)
+
+# Create Y variable and concatenate
+exposure$claim <- 0
+claims$claim <- 1
+data.initial <- rbind(exposure, claims)
+```
+
+# Data Summary
+### Set-up
+Code for setting up summary functions is below.
+```{r cache=TRUE, echo=TRUE, warning=FALSE}
+### Create summary of dataset
+mySummary <- function(data, y) {
+  require(magrittr)
+  n <- dim(data)[1]
+  v <- dim(data)[2]
+  c <- sum(y)
+  e <- n - c
+  labels <- c("Number of Observations",
+              "Number of Variables",
+              "Claims",
+              "Exposure")
+  output <- data.frame(labels, c(n, v, c, e))
+  colnames(output) <- c("Summary", "Values")
+  return(output)
+}
+kableIncidence <- function(summary){
+  tibble(Incidence = summary[3,2] / summary[1,2]) %>% kable(digits = 4, align="l")
+}
+data.initial.summary <- mySummary(data.initial, data.initial$claim)
+
+### Create summary of variables using package skimr
+# Define summary statistics (skimmers)
+base.skimmers <- sfl(missing_values = n_missing)
+
+skimList <- function(x) {
+  levels <- levels(x)
+  paste0(levels, collapse = ", ")
+}
+
+factor.skimmers <- sfl(
+  n_unique = "n_unique",
+  categories = skimList,
+  ordered = NULL,
+  top_counts = NULL
+)
+
+numeric.skimmers <- sfl(hist = NULL)
+
+# Compile the skimming function
+mySkim <- skim_with(numeric = numeric.skimmers,
+                    base = base.skimmers,
+                    factor = factor.skimmers)
+
+# Need industry to be numeric for later processing
+# For summary purposes replace it with a factor
+data.initial.industryfactor <-
+  mutate(data.initial, NAISC = as.factor(NAISC))
+data.initial.skim <- mySkim(data.initial.industryfactor)
+```
+### Summary
+```{r cache=TRUE, results='asis'}
+# Overall summary
+kable(data.initial.summary,
+      digits = 0,
+      format.args = list(big.mark = ","))
+kableIncidence(data.initial.summary)
+```
+
+#### Factor Variables
+```{r cache=TRUE, results='asis'}
+# Factor variables summary
+data.initial.skim.factor <- yank(data.initial.skim, "factor")
+colnames(data.initial.skim.factor) <- data.initial.skim.factor %>%
+  colnames() %>%
+  str_replace("_", " ") %>%
+  str_to_title()
+kable(data.initial.skim.factor)
+```
+#### Numeric Variables
+```{r cache=TRUE, results='asis'}
+# Numeric variables summary
+data.initial.skim.numeric <- yank(data.initial.skim, "numeric")
+colnames(data.initial.skim.numeric) <- data.initial.skim.numeric %>%
+  colnames() %>%
+  str_replace("_", " ") %>%
+  str_to_title()
+colnames(data.initial.skim.numeric)[5:9] <-
+  c("Min", "1st Qu.", "Median", "3rd Qu.", "Max")
+kable(data.initial.skim.numeric, digits = 2)
+```
+
+
+# Data Cleaning
+### Missing Values
+There 46 rows with missing values (not including industry codes 96 to 99), which are all from the exposure dataset (Y=0). Drop these values, as the effect is negligible. First few rows shown below. 
+```{r cache=TRUE}
+# Retrieve rows with missing values
+data.na <- subset(data.initial, rowSums(is.na(data.initial)) > 0)
+kable(data.na[-1] %>% head %>% as_tibble(), 
+      col.names = c("Province","Gender","Benefit","Age","Claim"),
+      align = "l")
+
+# Remove these 46 rows. Small amount and all have Y=0
+data <- subset(data.initial, rowSums(is.na(data.initial)) == 0)
+```
+
+### Age
+Looking at the tail ends of the age distribution, there are unexpected data at the minimum and maximum: age = 0 and age = 111. To simplify the problem, these rows will be removed along rows for very low and very high ages: under 16 and over 64. 18 exposure and 2 claim rows were removed for ages under 16, and 2186 exposure and 287 claim rows were removed for ages over 64.
+
+**Lower tail**
+```{r cache=TRUE, warning=FALSE}
+# Before starting, rename variables for convenience
+colnames(data) <- str_to_lower(colnames(data)) %>%
+  str_replace("province", "prov") %>%
+  str_replace("benefit", "ben")
+
+age.freq <- with(data, table(age, claim))
+
+# Tail ends of age distribution
+age.freq.low <- age.freq[as.numeric(rownames(age.freq)) < 16, ] %>%
+  rbind(Total = age.freq[as.numeric(rownames(age.freq)) < 16, ] %>% colSums())
+kable(tibble(Age = labels(age.freq.low)[[1]], 
+                Exposure = age.freq.low[,1],
+                Claims = age.freq.low[,2]))
+```
+**Upper tail** (note that for compactness, only the last 5 values are below)
+```{r cache=TRUE, warning=FALSE}
+age.freq.high <- age.freq[as.numeric(rownames(age.freq)) > 64, ] %>%
+  rbind(Total = age.freq[as.numeric(rownames(age.freq)) > 64, ] %>% colSums())
+kable(tibble(Age = labels(age.freq.high)[[1]], 
+                Exposure = age.freq.high[,1],
+                Claims = age.freq.high[,2]) %>% tail)
+# Set min and max for age, removing extreme data
+# Removed 2186 Y=0 and 287 Y=1 for age > 64
+# Removed 18 Y=0 and 2 Y=1 for age < 16
+age.min <- 16
+age.max <- 64
+data <- subset(data, (age > age.min & age < age.max))
+```
+### Region
+Nonstandard province names "RC" and "XX" were removed. There were 30 exposure rows and 4 claim rows. 
+```{r cache=TRUE}
+prov.freq <- with(data, table(prov, claim))
+prov.freq.bad <- prov.freq[rownames(prov.freq) %in% c("RC", "XX"), ]
+kable(tibble(Province = labels(prov.freq)[[1]], 
+                Exposure = prov.freq[,1],
+                Claims = prov.freq[,2]))
+
+# Remove 30 Y=0 and 4 Y=1 rows with Provinces RC and XX, map to ROC/QC
+data <- subset(data, (prov != "RC" & prov != "XX")) %>%
+  mutate(region = factor(ifelse(prov == "QC", "QC", "ROC"),
+                         levels = c("ROC", "QC")))
+```
+### Industry
+Due to lack of observations in some industries as well as the hypothesis that some industries will behave similarly in terms of incidence rates, standard NAISC industry codes have been mapped as follows:
+
+* Blue Collar: codes 11, 21, 22, 23, 31, 33, 56
+* Trade & Services: codes 41, 44, 48, 71, 72, 81
+* White Collar: codes 51, 52, 53, 54, 55
+* Public Services: codes 61, 62, 63, 91
+
+```{r cache=TRUE}
+naisc.freq <- with(data, table(naisc, claim))
+
+# Condense categories based on similarities for better prediction
+industry.levels <- c(
+  "BlueCollar",
+  "TradeAndServices",
+  "WhiteCollar",
+  "PublicServices",
+  "Invalid",
+  "Missing",
+  "Unmappable",
+  "Unknown"
+)
+
+industryMapping <- function(x, levels) {
+  require(magrittr)
+  bc <- c(11, 21, 22, 23, 31, 33, 56)
+  ts <- c(41, 44, 48, 71, 72, 81)
+  wc <- c(51, 52, 53, 54, 55)
+  ps <- c(61, 62, 63, 91)
+  y <- case_when(
+    x %in% bc ~ levels[1],
+    x %in% ts ~ levels[2],
+    x %in% wc ~ levels[3],
+    x %in% ps ~ levels[4],
+    x == 96 ~ levels[5],
+    x == 97 ~ levels[6],
+    x == 98 ~ levels[7],
+    x == 99 ~ levels[8]
+  ) %>%
+    factor(levels = levels)
+  return(y)
+}
+
+data$industry <- industryMapping(data$naisc, industry.levels)
+```
+
+The nonstandard industry codes remain as-is, due to observed correlation between these codes and their incidence rates. See chart and graphs in the Data Exploration section for Industry below.
+
+### Final Summary
+```{r cache=TRUE}
+# Summary ----------------------------------------------------------
+# Summarize dataset
+data[,c("naisc", "prov")] <- NULL
+data.summary <- mySummary(data, data$claim)
+kable(data.summary,
+      digits = 2,
+      format.args = list(big.mark = ","))
+kableIncidence(data.summary)
+```
+#### Factor Variables
+```{r cache=TRUE}
+# Summarize factor variables
+data.skim <- mySkim(data)
+data.skim.factor <- yank(data.skim, "factor")
+colnames(data.skim.factor) <- data.skim.factor %>%
+  colnames() %>%
+  str_replace("_", " ") %>%
+  str_to_title()
+kable(data.skim.factor)
+```
+#### Numeric Variables
+```{r cache=TRUE}
+# Summarize numeric variables
+data.skim.numeric <- yank(data.skim, "numeric")
+colnames(data.skim.numeric) <- data.skim.numeric %>%
+  colnames() %>%
+  str_replace("_", " ") %>%
+  str_to_title()
+colnames(data.skim.numeric)[5:9] <-
+  c("Min", "1st Qu.", "Median", "3rd Qu.", "Max")
+kable(data.skim.numeric, digits = 2)
+```
+
+# Data Exploration
+The plots for non-numeric variables are plotted with age on the x-axis and incidence on the y-axis, as the non-numeric variable cannot be on an axis. Age was chosen as a basis for comparison due to its strong 
+
+### Set-up
+Code for setting up plotting functions is below.
+```{r cache=TRUE}
+plotIncidence <- function(data, x, y, ...) {
+  require(magrittr)
+  require(ggplot2)
+  x.name <- deparse(substitute(x))
+  y.name <- deparse(substitute(y))
+  x <- data[[x.name]]
+  y <- data[[y.name]]
+  index <- sort(unique(x))
+  plot <- prop.table(table(x, y), 1)[, 2] %>%
+    as.data.frame() %>%
+    cbind(index) %>%
+    setNames(c("incidence", x.name)) %>%
+    ggplot(aes(x = index, y = incidence)) +
+    geom_point() +
+    labs(
+      ...,
+      subtitle = paste(
+        "Exposure =",
+        as.character(dim(data)[1] - sum(y)),
+        ", Claims = ",
+        as.character(sum(y))
+      ),
+      x = str_to_title(x.name),
+      y = "Incidence"
+    ) +
+    theme_light() +
+    scale_x_continuous(expand = c(0, 0), limits = c(min(x) - 1, max(x) + 1))
+  return(plot)
+}
+plotIncidence2 <- function(data, x1, x2, y, ..., palette) {
+  # for three-way tabulation, where the third var (x2) is binary
+  require(magrittr)
+  require(ggplot2)
+  x1.name <- deparse(substitute(x1))
+  x2.name <- deparse(substitute(x2))
+  y.name <- deparse(substitute(y))
+  
+  x1 <- data[[x1.name]]
+  x2 <- data[[x2.name]]
+  y <- data[[y.name]]
+  
+  probA <- prop.table(table(x1, x2, y), 1)[, 1, 2]
+  probB <- prop.table(table(x1, x2, y), 1)[, 2, 2]
+  
+  
+  x1.data <- c(rep(sort(unique(x1)), 2))
+  y.data <- c(probA, probB)
+  
+  x2.levels <- levels(x2)
+  x2.data <- c(rep(x2.levels[1], length(probA)),
+               rep(x2.levels[2], length(probB)))
+  
+  prob <- data.frame(
+    x1.name = c(rep(sort(unique(
+      x1
+    )), 2)),
+    incidence = c(probA, probB),
+    x2.name = c(rep(x2.levels[1], length(probA)),
+                rep(x2.levels[2], length(probB)))
+  )
+  
+  freq <- table(x2, y)
+  subtitle <- str_c(
+    x2.levels[1],
+    ": Exposure = ",
+    format(freq[1, 1], big.mark = ",", scientific = FALSE),
+    ", Claims = ",
+    format(freq[1, 2], big.mark = ",", scientific = FALSE),
+    "\n",
+    x2.levels[2],
+    ": Exposure = ",
+    format(freq[2, 1], big.mark = ",", scientific = FALSE),
+    ", Claims = ",
+    format(freq[2, 2], big.mark = ",", scientific = FALSE)
+  )
+  
+  plot <-
+    ggplot(prob, aes(x = x1.name, y = incidence, color = x2.name)) +
+    geom_point() +
+    labs(
+      ...,
+      x = str_to_title(x1.name),
+      y = "Incidence",
+      subtitle = subtitle,
+      color = str_to_title(x2.name)
+    ) +
+    theme_light() +
+    scale_color_manual(values = palette) +
+    scale_x_continuous(expand = c(0, 0), limits = c(15, 65)) +
+    scale_y_continuous(expand = c(0, 0), limits = c(0, max(y.data) * 1.05))
+  return(plot)
+}
+```
+### Age
+As expected, incidence increases smoothly with age. For this reason, plots of all non-numeric variables will use age on the x-axis.
+```{r}
+plotIncidence(data, age, claim, title = "Incidence by Age")
+```
+### Nonstandard industry codes
+The nonstandard industry codes were not removed, as they appear to behave differently than the standard industry codes. The plots below show that there is a relatively high correlation between having a nonstandard industry code (96 to 99, corresponds to "invalid code", "missing data", "unmappable code", "unknown code"). 
+
+This peculiarity may distort the model estimates and its predictive ability for datasets beyond the CDB. 
+```{r}
+# Before deciding how to handle them, need to look for patterns
+plot.i.s <- plotIncidence(subset(data, industry %in% industry.levels[1:4]), age, claim,
+                        title = "Incidence by Age for Standard Industry Codes")
+plot.i.ns <- plotIncidence(subset(data, industry %in% industry.levels[5:8]), age, claim,
+                        title = "Incidence by Age for Nonstandard Industry Codes")
+plot.i.i <- plotIncidence(subset(data, data$industry == "Invalid"), age, claim,
+                          title = "Incidence by Age for Industry = 96\n(invalid code)")
+plot.i.mi <- plotIncidence(subset(data, data$industry == "Missing"), age, claim,
+                           title = "Incidence by Age for Industry = 97\n(missing code)")
+plot.i.um <- plotIncidence(subset(data, data$industry == "Unmappable"), age, claim,
+                           title = "Incidence by Age for Industry = 98\n(unmappable code)")
+plot.i.uk <- plotIncidence(subset(data, industry == "Unknown"), age, claim,
+                           title = "Incidence by Age for Industry = 99\n(unknown code)")
+plot.i.bc <- plotIncidence(subset(data, industry == "BlueCollar"), age, claim,
+                           title = "Incidence by Age for\nIndustry = Blue Collar")
+plot.i.ts <- plotIncidence(subset(data, industry == "TradeAndServices"), age, claim,
+                           title = "Incidence by Age for\nIndustry = Trade And Services")
+plot.i.wc <- plotIncidence(subset(data, industry == "WhiteCollar"), age, claim,
+                           title = "Incidence by Age for\nIndustry = White Collar")
+plot.i.ps <- plotIncidence(subset(data, industry == "PublicServices"), age, claim,
+                           title = "Incidence by Age for\nIndustry = PublicServices")
+
+plot.i.s
+
+grid.arrange(plot.i.bc, plot.i.ts, plot.i.wc, plot.i.ps, nrow = 2)
+
+```
+```{r cache=TRUE}
+# Plots show there is an higher correlation between these codes and incidence
+plot.i.ns
+grid.arrange(plot.i.i, plot.i.mi, plot.i.um, plot.i.uk, nrow = 2)
+```
+
+### Gender
+There are more female observations than male observations across all ages, however the shape of the distributions across age appear to be similar for the two groups. 
+
+**Stacked Histogram**
+```{r}
+palette.g <- c("#e66a5c", "#36757d")
+hist.g <-
+  ggplot(data, aes(x = age, color = gender, fill = gender)) +
+  geom_histogram(binwidth = 1,
+                 alpha = 0.75,
+                 position = "stack") +
+  labs(
+    title = "Distribution of Age by Gender",
+    x = "Age",
+    y = "Count",
+    subtitle = str_c(
+      levels(data$gender)[1],
+      " Observations = ",
+      format(
+        table(data$gender)[1],
+        big.mark = ",",
+        scientific = FALSE
+      ),
+      ", ",
+      levels(data$gender)[2],
+      " Observations = ",
+      format(
+        table(data$gender)[2],
+        big.mark = ",",
+        scientific = FALSE
+      )
+    )
+  ) +
+  theme_light() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) +
+  scale_color_manual(values = palette.g) +
+  scale_fill_manual(values = palette.g) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 40000))
+hist.g
+```
+
+Looking at the incidence rates by age for both genders, there appears to be a change in the shape of the plot for males over age 45. For this reason, the regression models will have a spline at this age, active only for males. 
+
+```{r}
+plot.g <- plotIncidence2(data, age, gender, claim,
+                         palette = palette.g,
+                         title = "Incidence by Age and Gender")
+plot.g
+```
+### Region
+**Stacked Histogram**
+```{r}
+palette.r <- c("#E6B753", "#5D7D39")
+hist.r <-
+  ggplot(data, aes(x = age, color = region, fill = region)) +
+  geom_histogram(binwidth = 1,
+                 alpha = 0.75,
+                 position = "stack") +
+  labs(
+    title = "Distribution of Age by Region",
+    x = "Age",
+    y = "Count",
+    subtitle = str_c(
+      levels(data$region)[1],
+      " Observations = ",
+      format(
+        table(data$region)[1],
+        big.mark = ",",
+        scientific = FALSE
+      ),
+      ", ",
+      levels(data$region)[2],
+      " Observations = ",
+      format(
+        table(data$region)[2],
+        big.mark = ",",
+        scientific = FALSE
+      )
+    )
+  ) +
+  theme_light() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) +
+  scale_color_manual(values = palette.r) +
+  scale_fill_manual(values = palette.r) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 40000))
+hist.r
+```
+The distributions of ROC and QC observations appear similar in shape, while ROC overall has more observations. 
+
+Region plots are below. 
+```{r}
+plot.r <-
+  plotIncidence2(data,
+                 age,
+                 region,
+                 claim,
+                 palette = rev(palette.r),
+                 title = "Incidence by Age and Region")
+plot.r
+```
+#### Region and Gender
+```{r}
+plot.f.r <- plotIncidence2(subset(data, data$gender == "F"),
+                           age,
+                           region,
+                           claim,
+                           palette = rev(palette.r),
+                           title = "Female Incidence by Age and Region")
+plot.m.r <- plotIncidence2(subset(data, data$gender == "M"), 
+                           age, 
+                           region, 
+                           claim,
+                           palette = rev(palette.r),
+                           title = "Male Incidence by Age and Region")
+plot.f.r
+plot.m.r
+```
+### Benefit Amounts
+**Stacked Histogram**
+```{r message=FALSE, warning=FALSE}
+# Round benefit amounts to nearest 10 for plotting
+hist.b <-
+  ggplot(data, aes(x = ben, color = gender, fill = gender)) +
+  geom_histogram(binwidth = 100,
+                 alpha = 0.75,
+                 position = "stack") +
+  labs(
+    title = "Distribution of Benefit Amount by Gender",
+    x = "Benefit Amount",
+    y = "Count",
+    subtitle = str_c(
+      levels(data$gender)[1],
+      " Observations = ",
+      format(
+        table(data$gender)[1],
+        big.mark = ",",
+        scientific = FALSE
+      ),
+      ", ",
+      levels(data$gender)[2],
+      " Observations = ",
+      format(
+        table(data$gender)[2],
+        big.mark = ",",
+        scientific = FALSE
+      )
+    )
+  ) +
+  theme_light() +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) +
+  scale_color_manual(values = palette.g) +
+  scale_fill_manual(values = palette.g) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 40000))
+hist.b
+```
+
+Benefit amounts show high variance under 1000 and after 5000. 
+```{r}
+plot.b <- plotIncidence(mutate(data, ben = round(ben*2, -2)/2), 
+                        ben, claim, title = "Incidence by Benefit Amount") 
+plot.b
+```
+Looking more closely, incidence rates by benefit amount seem to spike downwards when the benefit amount is a “nice” number. This is illustrated in the tables below; note they have been rounded to the nearest 50 for compactness. 
+
+Smaller benefit amounts tended to spikes downwards at amounts divisible by 100. 
+```{r cache=TRUE}
+freq.b <- table(round(data$ben,-2)/2, data$claim)
+freq.b.output <- 
+  tibble(Benefit = labels(freq.b)[[1]], 
+                Exposure = freq.b[,1],
+                Claims = freq.b[,2]) %>% 
+  mutate(Incidence = Claims/(Claims+Exposure))
+kable(freq.b.output[27:37,], digits = c(0,0,0,4))
+```
+For larger amounts, these spikes tended to occur at amounts divisible by 500.
+```{r cache=TRUE}
+kable(freq.b.output[60:85,], digits = c(0,0,0,4))
+```
+Reverse causality is a potential issue with this data. It might be that benefit amounts are more exact when being reported for a claim. This affects the validity of model estimates and predictive ability.
+
+### Correlation Plots
+Correlation plots show overall low correlation between independent variables, with the exception of categorical variables, which is inherent to their design. 
+
+Note that ROC is the base region, F is the base gender, and BlueCollar is the base industry.
+```{r}
+corr.data <- data %>% select(claim, age, gender, ben, region, industry)
+corr.plot <- model.matrix(~ 0 + ., data = corr.data)[c(-3), c(-3)] %>%
+  cor(use = "pairwise.complete.obs") %>%
+  ggcorrplot(
+    show.diag = F,
+    type = "upper",
+    lab = TRUE,
+    lab_size = 2,
+    title = "Variable correlations"
+  )
+corr.plot
+```
+# Regression
+### Set-up
+```{r cache=TRUE}
+# clear all variables, keeping just data
+rm(list=setdiff(ls(), "data"))
+# Functions
+simpleSpline <- function(x, knot) {
+  # Makes a simple spline dummy variable
+  require(dplyr)
+  spline <- case_when(
+    x >= knot ~ x - knot,
+    x < knot ~ 0
+  )
+  return(spline)
+}
+AS <- function(m, test, y) {
+  # Calculates absolute score 
+  require(magrittr)
+  vcovHC <- vcovHC(m, type = "HC3")
+  predict <- predict(m, test, type = "response", vcov = vcovHC)
+  mean(abs(predict - y)) %>%
+    return()
+}
+BS <- function(m, test, y) {
+  require(magrittr)
+  # Calculates Brier score 
+  vcovHC <- vcovHC(m, type = "HC3")
+  predict <- predict(m, test, type = "response", vcov = vcovHC)
+  mean((predict - y) ^ 2) %>%
+    return()
+}
+AE <- function(m, test, y, x1, x2, labels) {
+  # Calculates AE table
+  require(tidyverse)
+  vcovHC <- vcovHC(m, type = "HC3")
+  p <- predict(m, test, type = "response", vcov = vcovHC) 
+  x1 <- test[[deparse(substitute(x1))]]
+  x2 <- test[[deparse(substitute(x2))]]
+  y <- test[[deparse(substitute(y))]]
+  d <- tibble(x1 = x1, x2 = x2, y = y, p = p)
+  ae <- d %>%
+    group_by(x1, x2) %>%
+    summarise(AE = mean(y)/mean(p), .groups = 'drop') %>%
+    add_column(Group = labels, .before = "AE")
+  return(ae)
+}
+mle.aic <- function(y, p, df){
+  # Calculates AIC of the log likelihood
+  # Used because glm computes AIC of a weird variant of log likelihood
+  # By using the standard measurement of log likelihood, can apply 
+  # to glmnet regressions that don't compute any AIC 
+  ll <- sum(y * -log(1 + exp(-p)) - (1 - y) * -log(1 + exp(p)))
+  mle.aic <- -2*ll + 2*df
+  return(mle.aic)
+}
+mle.bic <- function(y, p, df){
+  # Calculates BIC of the log likelihood, for same reason as mle.aic
+  ll <- sum(y * -log(1 + exp(-p)) - (1 - y) * -log(1 + exp(p)))
+  n <- dim(as.matrix(y))[1]
+  mle.bic <- -2*ll + df*log(n)
+}
+df.rr <- function(lambda,x) {
+  # Calculates degrees of freedom using in AIC computation
+  # glmnet does not do this correctly
+  proj <- x %*% solve(t(x) %*% x + lambda * diag(ncol(rrdata.x.train)))
+  xt <- t(x)
+  df.rr <- 0
+  for (i in seq(dim(proj)[1])) {
+    df.rr <- df.rr + dot(proj[i,], xt[,i])
+  }
+  return(df.rr)
+}
+
+# Make dummies 
+regdata <- data %>% select(age, region, gender, ben, industry)
+dummies <- dummyVars( ~ ., data = regdata, fullRank = T)
+regdata <- predict(dummies, newdata = regdata) %>% as.data.frame()
+regdata$claim <- data$claim
+
+spline46 <- simpleSpline(regdata$age, 46)
+regdata <- regdata %>% 
+  mutate(
+    age = poly(age, 1)[,1],
+    age2 = poly(age, 2)[,2],
+    age2spline = poly(age, 2)[,2]*spline46*gender.M
+  )
+
+# Partition
+set.seed(0522)
+trainIndex <-
+  createDataPartition(regdata$claim,
+                      p = .67,
+                      list = FALSE,
+                      times = 1)
+regdata.train <- regdata[trainIndex[,1], ]
+regdata.test  <- regdata[-trainIndex[,1], ]
+
+# Table containing models
+m <- tibble(
+  model = list(),
+  coef = list(),
+  desc = character(),
+  AIC = double(),
+  BIC = double(),
+  AS = double(),
+  BS = double(),
+  AE = list()
+)
+```
+### Evaluation Criteria
+The evaluation criteria are AIC, BIC, AS, BS, AE.
+
+AIC and BIC refer to the Akaike and Bayesian information criteria, which are measures of fit. Lower values indicate a better fit.
+
+AS and BS refer to absolute and Brier score, which are measures of accuracy. They respectively measure mean absolute error and mean squared error between the predicted probability and the actual value of Y (0 or 1). Values closer to 0 indicate better predictive power.
+
+Note that if we just blindly guessed the average incidence rate of 0.079 for each observation, then the BS would be 
+\( (1 - 0.079)(0.079 - 0)^2 + (0.079)(0.079 - 1)^2 = 0.0728 \).
+So to do better than blind guessing, the BS should be under 0.0728. Likewise, the maximum AS we should see is 
+\( (1 - 0.079)|0.079 - 0| + (0.079)|0.079 - 1| = 0.1455 \).
+
+AE is the actual-to-expected ratio of incidence rates for a given data group. "Actual" is the probability in the test dataset, and "expected" is the probability predicted from the model.
+
+The training and test data are split 67%/33% from the full dataset. Only one split was done for this initial investigation. Further analysis should aggregate results across multiple partitions.
+
+Seven variations of logistic models were fitted to the data. The first five test various transformations of the benefit model. The 6th and 7th are ridge regression models, which aim to reduce bias by increasing variance. The degree of this adjustment is computed to minimize a criterion. Most frequently, it minimizes the cross-validated mean-squared error (CV) or the AIC. The former prioritizes prediction accuracy while the latter emphasizes fit. 
+
+It is important to note that since the data measures a rare event (<10% rate), the coefficeints and predicted probabilities are subject to bias. Ridge regressions can mitigate this effect. Several other models are suitable for this situation, such as Firth's penalized logistic regression and Firth's penalized logistic regression with added covariates; however due to high computation costs they were not tested here.
+
+The results for each model are summarized below.
+
+### Models
+#### Base Model Formula
+The base model, model 1, is based on the folllowing equation (not all industry dummies were included for compactness). It was based on observations from the data exploration, and in initial analysis showed to perform better than numerous different specifications of age. 
+
+ \( \begin{align*}
+ claim & = \beta_0 + \beta_1 age + \beta_2 age^2 + \beta_3 age^2 \times spline(age, 46) \times male + \beta_4 male  \\
+& \quad + \beta_5 QC + \beta_6 benefit + \beta_7 WhiteCollar + \beta_8 PublicServices ... 
+ \end{align*}\)
+ 
+ where \( spline(age, 46) = \begin{cases}
+ age - 46 & \text{if } age \geq 46 \\
+ 0 & \text{if } age < 46 
+ \end{cases}
+ \)
+
+#### GLM: Models 1 to 6
+These models fit using a standard maximum likelihood estimation, where probabilities are distributed according to a logit function. Variances and covariances are estimated using White's heteroskedastic robust variances, as the data appears heteroskedastic (variance of errors is correlated with X).
+
+# Conclusion
+
+In summary, there are peculiarities in the dataset that do not lend well to regression analysis; mainly, the tendency for nonstandard industry codes to yield high incidence rates, and the tendency for "nice" benefit amounts (like 1500 or 2000 versus an amount like 2718.4) to yield low incidence rates. 
+
+Overall AE values by region and gender were close to 1, particularly for the model with benefit removed. However when separated by age band, they start to diverge. It appears that this divergence is partially caused by region, as the ROC and QC tables seem to offset each other. If further predictions are made, it might be helpful to alter the model criteria to instead calculate AS and BS for each category (each age band for each region), and to test models with an interaction between splined age and region. It may also be helpful to remove benefit amounts from the model, which would also remove its data sampling issue. 
+
+It is important to note that this investigation was based on a simplified dataset that was only tested once split. This dataset had a much higher overall incidence rate than usual, so it is likely that in the full dataset, bias and predictive ability will worsen due to a lower rate (rule of thumb is to have at least 10%). Since the dataset was only tested on one training/test split, it is possible that the results are anomalous; future testing should aggregate results across multiple partitions. 
