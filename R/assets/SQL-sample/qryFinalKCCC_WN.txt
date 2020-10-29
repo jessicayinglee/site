@@ -1,0 +1,9 @@
+SELECT DISTINCT KCCCM.First AS KeyContactFirstName, KCCCM.Last AS KeyContactLastName, KCCCM.FullName AS KeyContactFullName, KCCCM.Email AS KeyContactEmail, B.ContactType, B.ContactName, B.ContactEmail, B.CM_ID INTO FinalKCCC_WN
+FROM (SELECT 
+		* 
+	FROM 
+		FinalKC_WN
+	WHERE 
+		FinalKC_WN.KeyContactFullName IS NULL
+	)  AS B LEFT JOIN KeyContactCCMembership AS KCCCM ON B.CM_ID = KCCCM.CM_ID
+ORDER BY KCCCM.FullName;

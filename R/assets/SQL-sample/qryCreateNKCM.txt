@@ -1,0 +1,7 @@
+CREATE TABLE NonKeyContactMembership (
+NKCM_ID AUTOINCREMENT PRIMARY KEY,
+FullName Text,
+Email Text,
+ContactType Text,
+CM_ID Number
+);

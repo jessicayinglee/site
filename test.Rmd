@@ -1,7 +1,19 @@
 ---
 title: "CDB Incidence Rate Investigation"
+output:
+  html_document:
+    df_print: paged
+    css: main.css
+    mathjax: default
+    toc: yes
+    toc_depth: '3'
+    toc_float: yes
+    toc_smooth_scroll: yes
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache = TRUE)
+```
 # Data
 For convenience, only one year of exposure records was used: 2010. So the dataset is the concatenation of the 2010 exposure records with the 2005-2013 claims records. The year 2010 was not chosen for any particular reason.
 

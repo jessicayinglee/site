@@ -1,0 +1,3 @@
+SELECT AC.First, AC.Last, AC.FullName, AC.Email, CM.CM_ID INTO KeyContactCCMembership
+FROM AllContacts AS AC LEFT JOIN CompanyMembership AS CM ON (AC.ProductID = CM.ProductID) AND (AC.CompanyName = CM.CompanyName)
+WHERE AC.ContactType = "KeyContactCC";
