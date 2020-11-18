@@ -1,7 +1,0 @@
-name: "R-project"
-output_dir: "R"
-output:
-  html_document:
-    toc: true
-  theme: minima
-
